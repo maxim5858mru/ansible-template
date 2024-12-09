@@ -1,0 +1,30 @@
+---
+- name: Configure extended ACL
+  hosts: r1
+  gather_facts: false
+
+  tasks:
+    - name: Load new ACL into device
+      ios_config:
+        parents: ip access-list extended REQ3
+        lines:
+          - 10 permit tcp host 192.168.20.20 host 192.168.10.10 eq www
+          - 20 deny tcp any any eq www
+          - 30 permit ip any any
+    
+    - name: Apply new ACL to R1 Eth0/0 out
+      ios_config:
+        parents: interface Ethernet0/0
+        lines:
+          - ip access-group REQ3 out
+    
+    - name: Check result
+      ios_command:
+        commands: show ip access-list REQ3
+      register: result
+      tags: show
+
+    - name: Print result
+      debug:
+        var: result.stdout_lines
+      tags: show
